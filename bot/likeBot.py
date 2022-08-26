@@ -2,46 +2,54 @@ from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 from telegram import Update
 import telegram,os,json
 
-TOKEN = os.environ["TOKEN"] #5567524975:AAHH4ioN3ZGUXbzPPPrXNk2tdWJU3O_fFyk
-updater = Updater(TOKEN)
-bot = telegram.Bot(TOKEN)
+class Like_click:
+    def __init__(self):
+        self.TOKEN = os.environ["TOKEN"]
+        self.updater = Updater(self.TOKEN)
+        self.bot = telegram.Bot(self.TOKEN)
 
-def echo(update:Update, context:CallbackContext):
-    id = update.message.from_user.id
-    text = update.message.text
-    update_id = update.update_id
+    def likeButton(self,id):
+        keyboer = [[telegram.KeyboardButton('👍'), telegram.KeyboardButton('👎')]]
+        RKM = telegram.ReplyKeyboardMarkup(keyboer, resize_keyboard = True)
+        self.bot.sendMessage(id, '👇👇♥️♥️♥️Like Count♥️♥️♥️👇👇', reply_markup=RKM)
 
-    #json filni ochadi va uni dict ga o'tqazadi
-    with open('bot/json.json', 'r') as f:
-        data = json.load(f)
+    def jsonDump(self,data):
+        with open('bot/json.json', 'w') as f:
+            json.dump(data, f, indent=2)
 
-    #dict jsonga malumot qo'shadi
-    data[update_id] = [text,id]
+    def jsonLoad(self):
+        with open('bot/json.json', 'r') as f:
+            data = json.load(f)
+        return  data
 
-    #dictni jisonga o'ytqazadi va jsonga saqlaydi
-    with open('bot/json.json', 'w') as f:
-        json.dump(data, f, indent=2)
+    def sendMessage(self, id, text):
+        self.bot.sendMessage(id, text)
 
-    with open('bot/json.json', 'r') as f:
-        data_dict = json.load(f)
+    def likeCount(self,update:Update, context:CallbackContext):
+        id = update.message.from_user.id
+        text = update.message.text
+        update_id = update.update_id
 
-    like = 0
-    dithlike = 0
-    for k,q in data_dict.items():
-        if q[1] == id and q[0] == '👍':
-            like += 1
+        self.jsonDump(self.jsonLoad())
+        data = self.jsonLoad()
+        data[update_id] = [text,id]
+        self.jsonDump(data)
 
-        if q[1] == id and q[0] == '👎':
-            dithlike += 1
+        like = 0
+        didnotlike = 0
+        for k,q in data.items():
+            if q[1] == id and q[0] == '👍':
+                like += 1
 
-    #like yoki dithlike ni foydalanuvchiga yuborish
-    t = f"like👍:{like}\ndithlike👎:{dithlike}"
-    bot.sendMessage(id, t)
+            if q[1] == id and q[0] == '👎':
+                didnotlike += 1
 
-    keyboer = [[telegram.KeyboardButton('👍'), telegram.KeyboardButton('👎')]]
-    RKM = telegram.ReplyKeyboardMarkup(keyboer, resize_keyboard = True)
-    bot.sendMessage(id, 'like', reply_markup=RKM)
+        textMessage = f"like👍-------------{like}\ndid not like👎--{didnotlike}"
 
-updater.dispatcher.add_handler(MessageHandler(Filters.text,echo))
-updater.start_polling()
-updater.idle()
+        self.sendMessage(id, textMessage)
+        self.likeButton(id)
+
+like = Like_click()
+like.updater.dispatcher.add_handler(MessageHandler(Filters.text,like.likeCount))
+like.updater.start_polling()
+like.updater.idle()
